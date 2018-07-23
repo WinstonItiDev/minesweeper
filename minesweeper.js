@@ -2,24 +2,43 @@
 document.addEventListener('DOMContentLoaded', startGame)
 
 var board = {
-
-  cells: [
-
-  {row: 0, col: 0, isMine: false, hidden: true},
-  {row: 0, col: 1, isMine: false, hidden: true},
-  {row: 0, col: 2, isMine: false, hidden: true},
-  {row: 1, col: 0, isMine: true, hidden: true},
-  {row: 1, col: 1, isMine: true, hidden: true},
-  {row: 1, col: 2, isMine: false, hidden: true},
-  {row: 2, col: 0, isMine: true, hidden: true},
-  {row: 2, col: 1, isMine: true, hidden: true},
-  {row: 2, col: 2, isMine: false, hidden: true},
-
-  ]
-
+  cells: []
 };
 
+var size = 4;
+
+var resetButton;
+
+var sound_applause;
+var sound_flag;
+var sound_explosion;
+
+
+function gameBoard() {
+	
+	
+  for(var r = 0; r < size; r++) {
+    for (var c = 0; c < size; c++) {
+      board.cells.push({
+        col: c,
+        row: r,
+        isMine: Math.random() <= 0.2,
+        hidden: true,
+      })
+    }
+  }
+}
+
 function startGame() {
+
+ 
+  sound_explosion = new soundFX("./soundFX/explosion.wav");
+
+  gameBoard();
+
+  resetButton = document.getElementById("buttonID");
+  resetButton.classList.add("hideButton");
+  
   for (var i = 0; i < board.cells.length; i++) {
     board.cells[i].surroundingMines = countSurroundingMines(board.cells[i])
   }
@@ -36,18 +55,33 @@ function startGame() {
 // 2. Are all of the mines marked?
 
 function checkForWin () {
-  for (var i = 0; i < board.cells.length; i++) {
 
-    if (!board.cells[i].isMarked && board.cells[i].hidden) {
-      return
+  sound_flag = new soundFX("./soundFX/flag.wav");
+  sound_applause = new soundFX("./soundFX/applause.wav");
+  resetButton = document.getElementById("buttonID");
+
+  for (let index =0; index < board.cells.length; index++){
+    if (board.cells[index].isMine && !board.cells[index].isMarked){
+      sound_flag.play();
+      
+      return;
     }
-
-    if (!board.cells[i].isMine && board.cells[i].hidden) {
-      return
+    if (board.cells[index].isMarked && !board.cells[index].isMine && board.cells[index].hidden) {
+      sound_flag.play();
+      return;
+    }
+    if (!board.cells[index].isMine && board.cells[index].hidden) {
+      sound_flag.play();
+      return;
+    }
   }
-}
-return lib.displayMessage('You win!')
-}
+  resetButton.classList.remove("hideButton");
+  sound_applause.play();
+  return lib.displayMessage('You win!')
+
+  }
+
+
 
 // Define this function to count the number of mines around the cell
 // (there could be as many as 8). You don't have to get the surrounding
@@ -66,11 +100,30 @@ function countSurroundingMines(cell) {
   for (var i = 0; i < surroundingCells.length; i++) {
     if(surroundingCells[i].isMine == true) {
       count = count + 1;
-      console.log(count);
+      
     }
   }
   return count;
 }
 
+function resetGame() {
+	document.getElementsByClassName("board")[0].innerHTML = "";
+	board = { cells: [] };
+	startGame();
+}
 
 
+function soundFX(src) {
+  this.sound = document.createElement("audio");
+  this.sound.src = src;
+  this.sound.setAttribute("preload", "auto");
+  this.sound.setAttribute("controls", "none");
+  this.sound.style.display = "none";
+  document.body.appendChild(this.sound);
+  this.play = function(){
+    this.sound.play();
+  }
+  this.stop = function() {
+    this.sound.pause();
+  }
+}
